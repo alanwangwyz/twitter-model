@@ -4,7 +4,7 @@ final
 ├── JSON					store the data for frontend, mainly graph object
 ├── Stream					tweet stream and search API
 ├── data					price, and tweet data retrieval and manipulation
-├── model					model training and development
+├── model					model training and development (six in total)
 └── requirement.txt				our project used modules
 ```
 ## Steps to run
@@ -12,7 +12,7 @@ final
 2. run search: python3 Search.py
 3. launch automatic crab: python3 crab.py
 
-Then it will updated automatically. 
+Then it will updated automatically at 1AM Melbourne time on a daily basis. 
 
 Deployed Server:
 http://45.113.234.255:3000

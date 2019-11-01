@@ -17,5 +17,13 @@ Then it will updated automatically at 1AM Melbourne time on a daily basis.
 Deployed Server:
 http://45.113.234.255:3000
 
+## Install Environment
+1. git clone : git clone https://github.com/alanwangwyz/twitter-model.git
+2. install virtualenv. **sudo pip3 install virtualenv**
+3. create a new virtual environment: **virtualenv venv**
+4. change to virtual environment: for Mac/Linux: **source venv/bin/activate**
+5. **sudo pip3 install -r requirements.txt**  to install modules
+6. leave environment: **deactivate**
+
 This part provides the data for frontend. They should work together to show a complete picture.
 https://github.com/bell0925/cryptographic

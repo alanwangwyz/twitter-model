@@ -186,10 +186,10 @@ try:
     collection = db['twitter_collection_2016-2018']
     history = pd.DataFrame(list(collection.find()))
     history = percentage(history, 1)
-    collection = db['twitter_collection_5_8_17']
+    collection = db['twitter_collection_5_8_19']
     archive = pd.DataFrame(list(collection.find()))
     archive = percentage(archive, 0)
-    collection = db['twitter_collection_13_10']
+    collection = db['twitter_collection_14']
     archiveold = pd.DataFrame(list(collection.find()))
     archiveold = percentage(archiveold, 0)
     collection = db['twitter_collection']

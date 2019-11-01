@@ -1,0 +1,15 @@
+bcolz
+pandas
+quandl==3.4.5
+pymongo==3.8.0
+vadersentiment==3.2.1
+scikit-learn
+plotly==4.0.0
+tensorflow
+numpy
+twitterapi
+tweepy==3.6.0
+python-crontab==2.3.9
+torchtext==0.2.3
+fastai==0.7.0
+

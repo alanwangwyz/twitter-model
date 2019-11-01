@@ -25,8 +25,6 @@ def load_pickle(filepath):
     documents_f.close()
     return file
 
-
-
 #Rearrange model information
 two_simple = []
 x = load_pickle(os.path.join('info.p'))
@@ -74,6 +72,7 @@ df3['RMSE'] = df3.min(axis=1)
 df = pd.concat([df,df1],sort = True)
 df = pd.concat([df,df3],sort = True)
 df.fillna(0, inplace= True)
+# save into JSON
 df.to_json(r'../JSON/Comparison.json')
 logger.info("Sentiment comparison has been saved.")
 gc.collect()

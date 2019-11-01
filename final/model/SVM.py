@@ -22,6 +22,7 @@ import numpy as np
 import json
 import pandas as pd
 from os import sys
+from fastai.structured import *
 sys.path.append('..')
 from model import useful_function
 
@@ -43,14 +44,19 @@ class SVMmodel(threading.Thread):
         total = {}
         data = self.data
         data['Date'] = data['timestamp'].map(mdates.date2num)
-        # data['timestamp'] = pd.to_datetime(data.index, format='%Y-%m-%d')
-        # data.index = data['timestamp']
-        # data['Date'] = data.index
         new_data = pd.DataFrame(index=range(0, len(data)), columns=['Date', 'Close'])
         for i in range(0, len(data)):
             new_data['Date'][i] = data['Date'][i]
             new_data['Close'][i] = data['Close'][i]
-        print(new_data)
+        # transform data according to Fastai
+        add_datepart(new_data, 'Date')
+        new_data.drop('Elapsed', axis=1, inplace=True)
+        new_data['mon_fri'] = 0
+        def check(date):
+            if date == 0 or date == 4:
+                return 1
+            return 0
+        new_data['mon_fri'] = new_data['Dayofweek'].apply(lambda row: check(row))
         new_data.index = data['timestamp']
         data1 = new_data.copy()
         new_data['neg'] = data['Isneg']
@@ -82,9 +88,11 @@ class SVMmodel(threading.Thread):
         x_valid2 = valid2.drop('Close', axis=1)
         y_valid2 = valid2['Close']
 
+        # build model
         svr_rbf = SVR(kernel='rbf', C=1e3, gamma=0.1)
         svr_rbf.fit(x_train, y_train)
         preds = svr_rbf.predict(x_valid)
+        # evaluation
         rms1 = np.sqrt(np.mean(np.power((np.array(y_valid) - np.array(preds)), 2)))
         self.logging.info('SVM')
         self.logging.info('RMSE value on validation set with +/- and Government: {}.'.format(rms1))
@@ -101,11 +109,12 @@ class SVMmodel(threading.Thread):
         valid['Predict_Twitter'] = preds
         self.rmse[rms1] = x_train, y_train, svr_rbf, new_data
 
+        # build model
         svr_rbf1 = SVR(kernel='rbf', C=1e3, gamma=0.1)
         svr_rbf1.fit(x_train1, y_train1)
         preds1 = svr_rbf1.predict(x_valid1)
         rms2 = np.sqrt(np.mean(np.power((np.array(y_valid1) - np.array(preds1)), 2)))
-        self.logging.info('SVM')
+        # evaluation
         self.logging.info('RMSE value on validation set : {}.'.format(rms2))
         print('RMSE value on validation set with SVM:')
         print(rms2)
@@ -120,11 +129,12 @@ class SVMmodel(threading.Thread):
         t1.append(MAPE1)
         total['N'] = t1
 
+        # build model
         svr_rbf2 = SVR(kernel='rbf', C=1e3, gamma=0.1)
         svr_rbf2.fit(x_train2, y_train2)
         preds2 = svr_rbf2.predict(x_valid2)
+        # evaluation
         rms3 = np.sqrt(np.mean(np.power((np.array(y_valid2) - np.array(preds2)), 2)))
-        self.logging.info('SVM')
         self.logging.info('RMSE value on validation set with +/- : {}.'.format(rms3))
         print('RMSE value on validation set with SVM:')
         print(rms3)
@@ -139,15 +149,13 @@ class SVMmodel(threading.Thread):
         total['T'] = t2
         self.rmse[rms3] = x_train2, y_train2, svr_rbf2, data2
 
+        # make prediction with minimum RMSE
         index = min(self.rmse.keys())
-        # print(self.rmse.get(index))
         newx_train, newy_train, new_model, newd = self.rmse.get(index)
-
         stdev = np.sqrt(sum((new_model.predict(newx_train) - newy_train) ** 2) / (len(newy_train) - 2))
-        # print(stdev)
         predict = useful_function.FunctionalTools.predict(365, new_model, stdev, newd, 'SVM')
         fig = useful_function.FunctionalTools.plot_intervals(predict)
-
+        # produce graph
         fig1 = useful_function.FunctionalTools.evaluate('SVM with Twitter and Government\n RMSE: \t', rms1, train_,
                                         valid, valid, index, fig)
         with open('../JSON/SVMTwitterGovernment.json', 'w') as outfile:
@@ -165,8 +173,6 @@ class SVMmodel(threading.Thread):
             json.dump(fig3, outfile, cls=plotly.utils.PlotlyJSONEncoder)
         self.info['SVM'] = total
         self.logging.info('SVM Models have been saved!')
-
-
         gc.collect()
 
     def join(self, *args):

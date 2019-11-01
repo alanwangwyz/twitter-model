@@ -1,3 +1,23 @@
+#University of Melbourne
+#School of computing and information systems
+#Master of Information Technology
+#Semester 2, 2019
+#2019-SM2-COMP90055: Computing Project
+#Software Development Project
+#Cryptocurrency Analytics Based on Machine Learning
+#Supervisor: Prof. Richard Sinnott
+#Team member :Tzu-Tung HSIEH (818625)
+#             Yizhou WANG (669026)
+#             Yunqiang PU (909662)
+
+#This part we just call the function 'from sklearn 
+# import neighbors' to get the k-NearestNeighbor 
+# model apply to the gov sentiment analysis and to 
+# produce the KNN.json as the result.'GridSearchCV' 
+# This function is used as automatic adjustment 
+# parameter.And output the optimal parameter and 
+# result.
+
 import gc
 import plotly
 import plotly.graph_objs as go
@@ -28,25 +48,19 @@ class KNNModel(threading.Thread):
         data['timestamp'] = pd.to_datetime(data.index, format='%Y-%m-%d')
         data.index = data['timestamp']
         data['Date'] = data.index
-
-        # sorting
         data = data.sort_index(ascending=True, axis=0)
-
-        # creating a separate dataset
         new_data = pd.DataFrame(index=range(0, len(data)), columns=['Date', 'Close'])
-
         for i in range(0, len(data)):
             new_data['Date'][i] = data['Date'][i]
             new_data['Close'][i] = data['Close'][i]
+        # transform data into fastai
         add_datepart(new_data, 'Date')
         new_data.drop('Elapsed', axis=1, inplace=True)
         new_data['mon_fri'] = 0
-        print(new_data)
         def check(date):
             if date == 0 or date == 4:
                 return 1
             return 0
-
         new_data['mon_fri'] = new_data['Dayofweek'].apply(lambda row: check(row))
         new_data.index = data['timestamp']
         data1 = new_data.copy()
@@ -69,11 +83,14 @@ class KNNModel(threading.Thread):
         x_valid_scaled = scaler.fit_transform(x_valid)
         x_valid = pd.DataFrame(x_valid_scaled)
         self.logging.info('KNN')
+        # GridSearch
         params = {'n_neighbors': [2, 3, 4, 5, 6, 7, 8, 9]}
         knn = neighbors.KNeighborsRegressor()
         model1 = GridSearchCV(knn, params, cv=5)
+        # build model
         model1.fit(x_train, y_train)
         preds = model1.predict(x_valid)
+        # evaluation
         rms_linear = np.sqrt(np.mean(np.power((np.array(y_valid) - np.array(preds)), 2)))
         self.logging.info('RMSE value on validation set with +/- and Government: {}.'.format(rms_linear))
         print('RMSE value on validation set with +/- KNN:')
@@ -101,9 +118,11 @@ class KNNModel(threading.Thread):
         x_train1 = pd.DataFrame(x_train_scaled1)
         x_valid_scaled1 = scaler.fit_transform(x_valid1)
         x_valid1 = pd.DataFrame(x_valid_scaled1)
+        # build model
         model2 = GridSearchCV(knn, params, cv=5)
         model2.fit(x_train1, y_train1)
         preds1 = model2.predict(x_valid1)
+        # evaluation
         rms_linear1 = np.sqrt(np.mean(np.power((np.array(y_valid1) - np.array(preds1)), 2)))
         self.logging.info('RMSE value on validation set: {}.'.format(rms_linear1))
         print('\n RMSE value on validation set KNN:')
@@ -131,8 +150,10 @@ class KNNModel(threading.Thread):
         x_valid_scaled2 = scaler.fit_transform(x_valid2)
         x_valid2 = pd.DataFrame(x_valid_scaled2)
         model3 = GridSearchCV(knn, params, cv=5)
+        # build model
         model3.fit(x_train2, y_train2)
         preds2 = model3.predict(x_valid2)
+        # evaluation
         rms_linear2 = np.sqrt(np.mean(np.power((np.array(y_valid2) - np.array(preds2)), 2)))
         self.logging.info('RMSE value on validation set with +/-: {}.'.format(rms_linear2))
         print('\n RMSE value on validation set KNN:')
@@ -153,15 +174,13 @@ class KNNModel(threading.Thread):
         train_.index = data.index
         train1.index = data.index
 
+        # make prediction with minimum RMSE
         index = min(self.rmse.keys())
-        # print(self.rmse.get(index))
         newx_train, newy_train, new_model, newd = self.rmse.get(index)
-
         stdev = np.sqrt(sum((new_model.predict(newx_train) - newy_train) ** 2) / (len(newy_train) - 2))
-        # print(stdev)
         predict = useful_function.FunctionalTools.predict(365, new_model, stdev, newd, 'K')
         fig = useful_function.FunctionalTools.plot_intervals(predict)
-
+        # produce graph
         fig1 = useful_function.FunctionalTools.evaluate('KNN with Twitter and Government\n RMSE: \t', rms_linear, train_,
                                         valid, valid, index, fig)
         with open('../JSON/KNNTwitterGovernment.json', 'w') as outfile:
@@ -178,7 +197,6 @@ class KNNModel(threading.Thread):
         self.info['KNN']=total
 
         self.logging.info('KNN Models have been saved!')
-
         gc.collect()
 
     def join(self, *args):

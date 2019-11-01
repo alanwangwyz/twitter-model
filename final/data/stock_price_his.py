@@ -1,3 +1,19 @@
+#University of Melbourne
+#School of computing and information systems
+#Master of Information Technology
+#Semester 2, 2019
+#2019-SM2-COMP90055: Computing Project
+#Software Development Project
+#Cryptocurrency Analytics Based on Machine Learning
+#Supervisor: Prof. Richard Sinnott
+#Team member :Tzu-Tung HSIEH (818625)
+#             Yizhou WANG (669026)
+#             Yunqiang PU (909662)
+
+# From the 'poloniex' api to get the price of ten Cryptocurrency
+# 'ETH','LTC','XRP','ETC','STR','DASH','SC','XMR','XEM'
+# and output to 'Total.json' to the front end for display.
+import json
 import plotly
 import pandas as pd
 import pickle
@@ -77,37 +93,26 @@ def df_scatter(df, title, seperate_y_axis=False, y_axis_label='', scale='linear'
     return fig
 
 
-
-
-
 def get_json_data(json_url, cache_path):
     try:
         f = open(cache_path, 'rb')
         df = pickle.load(f)
-        print('Loaded {} from cache'.format(json_url))
     except (OSError, IOError) as e:
-        print('Downloading {}'.format(json_url))
         df = pd.read_json(json_url)
         df.to_pickle(cache_path)
-        print('Cached {} at {}'.format(json_url, cache_path))
     return df
 
-
-base_polo_url = 'https://poloniex.com/public?command=returnChartData&currencyPair={}&start={}&end={}&period={}'
-start_date = datetime.strptime('2015-01-01', '%Y-%m-%d') # get data from the start of 2015
-end_date = datetime.now() # up until today
-pediod = 86400 # pull daily data (86,400 seconds per day)
-
 def get_crypto_data(poloniex_pair):
-    '''Retrieve cryptocurrency data from poloniex'''
     json_url = base_polo_url.format(poloniex_pair, start_date.timestamp(), end_date.timestamp(), pediod)
     data_df = get_json_data(json_url, poloniex_pair)
     data_df = data_df.set_index('date')
     return data_df
 
-
+base_polo_url = 'https://poloniex.com/public?command=returnChartData&currencyPair={}&start={}&end={}&period={}'
+start_date = datetime.strptime('2015-01-01', '%Y-%m-%d') # get data from the start of 2015
+end_date = datetime.now() # up until today
+pediod = 86400 # pull daily data (86,400 seconds per day)
 altcoins = ['ETH','LTC','XRP','ETC','STR','DASH','SC','XMR','XEM']
-
 altcoin_data = {}
 for altcoin in altcoins:
     coinpair = 'BTC_{}'.format(altcoin)
@@ -120,9 +125,8 @@ for altcoin in altcoin_data.keys():
 
 combined_df = merge_dfs_on_column(list(altcoin_data.values()), list(altcoin_data.keys()), 'price_usd')
 combined_df['BTC'] = btc_usd_datasets['avg_btc_price_usd']
-import json
 fig2=df_scatter(combined_df, 'Cryptocurrency Prices (USD)', seperate_y_axis=False, y_axis_label='Coin Value (USD)', scale='log')
-#fig2.show()
 
+# save the graph into json
 with open('../JSON/Total.json', 'w') as outfile:
     json.dump(fig2, outfile, cls=plotly.utils.PlotlyJSONEncoder)

@@ -1,3 +1,22 @@
+#University of Melbourne
+#School of computing and information systems
+#Master of Information Technology
+#Semester 2, 2019
+#2019-SM2-COMP90055: Computing Project
+#Software Development Project
+#Cryptocurrency Analytics Based on Machine Learning
+#Supervisor: Prof. Richard Sinnott
+#Team member :Tzu-Tung HSIEH (818625)
+#             Yizhou WANG (669026)
+#             Yunqiang PU (909662)
+
+# Because the limits of the twitter api, each developer
+#  can only use for limited number of times,so there are
+#   5 accounts for the crawling of the data and 
+#   just at ' para = config[N]' N is the represent each 
+#   account it can switch.all the crawling will produce 
+#   the to the MongoClient
+
 import gc
 import tweepy
 import json
@@ -31,60 +50,42 @@ def getKeyToken(parameter):
     return auth
 
 def removewebsite (tweetdata):
-
     try:
         text = tweetdata['extended_tweet']['full_text']
-
     except:
         text = tweetdata['text']
-
     pattern = re.compile('https://t.co/\w+')
-
     pat = pattern.findall(text)
-
     if len(pat) is 1:
         match = pat[0]
         text = text.replace(match, "")
     return text
-
 
 def add_id(tweetdata):
     id=tweetdata['id']
     tweetdata['_id']=str(id)
     return tweetdata
 
-
-# Tweet listener
 class tweetListener(StreamListener):
 
     def on_data(self, data):
-
         tweetdata = json.loads(data)
         tweetdata = add_id(tweetdata)
-
         tweetReal = removewebsite(tweetdata)
         contentText1 = re.sub(r'#(\w+)\b', ' $1 ', tweetReal)
         contentText = re.sub(r'@\w+\b', '', contentText1)
-
-
-
         tweetid = tweetdata['id']
         print(tweetid)
-
-
 
         client = MongoClient('localhost', 27017)
         db = client['twitter_db']
         collection = db['twitter_collection']
         sentiment = sentiment_analysis(contentText)
         tweetdata['sentiment'] = sentiment
-        # df = pd.DataFrame.from_dict(json_normalize(tweetdata), orient='columns')
-        
-        # print(tweetdata)
+        # delete useless information
         del tweetdata['id']
         del tweetdata['id_str']
         del tweetdata['source']
-        #
         del tweetdata['in_reply_to_status_id']
         del tweetdata['in_reply_to_status_id_str']
         del tweetdata['in_reply_to_user_id']
@@ -97,7 +98,6 @@ class tweetListener(StreamListener):
         if 'possibly_sensitive' in tweetdata:
             del tweetdata['possibly_sensitive']
         del tweetdata['filter_level']
-        # del tweetdata['timestamp_ms']
         if 'quoted_status_id' in tweetdata:
             del tweetdata['quoted_status_id']
         if 'quoted_status_id_str' in tweetdata:
@@ -117,21 +117,10 @@ class tweetListener(StreamListener):
         if 'user' in tweetdata:
             name = tweetdata['user']['name']
             x = {'name':name}
-            # del tweetdata['user']
             tweetdata['user'] = x
             
-            # del tweetdata['user']['id'], tweetdata['user']['id_str'], tweetdata['user']['location'], tweetdata['user']['url']
-            # del tweetdata['user']['description'], tweetdata['user']['translator_type'], tweetdata['user']['protected'], tweetdata['user']['verified']
-            # del tweetdata['user']['utc_offset'], tweetdata['user']['time_zone'], tweetdata['user']['translator_type']
-            
-            
-        # print(tweetdata)
-        
-        # print(df)
         value = json.dumps(tweetdata, default=lambda x: x.__dict__)
-        # print(value)
         value = json.loads(value)
-
 
         try:
             collection.insert(value)
@@ -174,25 +163,19 @@ class tweetListener(StreamListener):
             time.sleep(60)
             return False
 
-
 def main():
     # This handles Twitter authetification and the connection to Twitter Streaming API
     try:
 
         listener = tweetListener()
-
         para = config[4]
-
         stream = Stream(getKeyToken(para), listener)
         logger.info(para['keyword'])
-        # print(para['keyword'])
-
-        # Only search tweets in restricted area and default language is English
+        # default language is English
         stream.filter(languages=["en"], track=['BTC', 'cryptocurrency', 'bitcoin'])
     except Exception as e:
         print(e)
         time.sleep(60)
-
 
 main()
 

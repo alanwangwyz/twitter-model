@@ -1,3 +1,23 @@
+#University of Melbourne
+#School of computing and information systems
+#Master of Information Technology
+#Semester 2, 2019
+#2019-SM2-COMP90055: Computing Project
+#Software Development Project
+#Cryptocurrency Analytics Based on Machine Learning
+#Supervisor: Prof. Richard Sinnott
+#Team member :Tzu-Tung HSIEH (818625)
+#             Yizhou WANG (669026)
+#             Yunqiang PU (909662)
+
+# This is the core class of our class that using 
+# the classes and data on mongo to produce the 
+# sentiment of each time period and divided them
+#  into the 'public' 'media'and'government'
+#  according to the number of likes and retweet
+#  and forward,together with a government list .
+#  then saved as a json and pickle tosend to front end to display
+
 import pymongo
 import pandas as pd
 from datetime import datetime, timedelta, date, time as dtime
@@ -115,10 +135,8 @@ def difference(history):
     history['GovIsneg'] = history['Govneg_change'].apply(lambda x: tag(x))
     history['Ispos'] = history['pos_change'].apply(lambda x: tag(x))
     history['Isneg'] = history['neg_change'].apply(lambda x: tag(x))
-    # history['timestamp'] = history.index
-    # history.index = history['timestamp']
-    # history = history.set_index('timestamp').resample('D').ffill()
     return history
+
 def tag(context):
     if context is None:
         return 0
@@ -163,67 +181,52 @@ try:
     db = client['twitter_db']
 
     file_extraction_start = time.time()
-    # collection = db['twitter_collection_2016-2018']
-    # history = pd.DataFrame(list(collection.find()))
-    # history = percentage(history, 1)
-    # collection = db['twitter_collection_5_8_17']
-    # archive = pd.DataFrame(list(collection.find()))
-    # archive = percentage(archive, 0)
-    # collection = db['twitter_collection_13_10']
-    # archiveold = pd.DataFrame(list(collection.find()))
-    # archiveold = percentage(archiveold, 0)
-
-    history=load_pickle(os.path.join('history1.p'))
+    # extract the data from database
+    file_extraction_start = time.time()
+    collection = db['twitter_collection_2016-2018']
+    history = pd.DataFrame(list(collection.find()))
+    history = percentage(history, 1)
+    collection = db['twitter_collection_5_8_17']
+    archive = pd.DataFrame(list(collection.find()))
+    archive = percentage(archive, 0)
+    collection = db['twitter_collection_13_10']
+    archiveold = pd.DataFrame(list(collection.find()))
+    archiveold = percentage(archiveold, 0)
     collection = db['twitter_collection']
     recent = pd.DataFrame(list(collection.find()))
     recent = percentage(recent, 2)
-    
-    # history = pd.concat([archiveold, history], sort=True)
-    # history = pd.concat([history, archive], sort=True)
+
+    #combine them together
+    history = pd.concat([archiveold, history], sort=True)
+    history = pd.concat([history, archive], sort=True)
     history = pd.concat([history, recent], sort=True)
+    
     history.index = history['timestamp']
     history.sort_index(inplace=True)
-# #     datetime_object = datetime.strptime('Sep 13 2011', '%b %d %Y')
-# # #    print(history.iloc[0])
-# #     history.loc[0] = [0, 0, 5, 1, 5, 0, 455, 0.080000, 3450, 0.630000, 1640, 0.298182, datetime_object, 5500]
-
-#     # print('second')
-#     # print(history)
-#     # history.sort_index(inplace=True)
-
     history=difference(history)
-    # if history['timestamp'].iloc[len(history)-1].date()==datetime.now().date():
-    #     history.drop(history.tail(1).index, inplace = True)
-    
     datetime1 = datetime.strftime(datetime.now() - timedelta(1), '%Y-%m-%d')
     new = history.iloc[len(history) - 1]
     new = new.to_dict()
-
     history = history.append(pd.DataFrame(new, index=[datetime1]))
     history['timestamp'] = history.index
     history.index = history['timestamp']
     history = history.drop_duplicates(subset='timestamp', keep="first")
-
     history = history.resample('D').ffill()
-
     history['timestamp'] = history.index
+    # concat with price
     old = load_pickle(os.path.join("../data/stock_price.p"))
     history['date'] = history.index
     old['date'] = old.index
     history = pd.merge(old, history, how='left')
-    
     history.index = history['timestamp']
-    print(history)
-
-    
-    
+    # save training set
     save_pickle(history, os.path.join('final.p'))
     file_extraction_end = time.time()
-
-#     # client = pymongo.MongoClient('localhost', 27017)
-#     # db = client['twitter_backup']
-#     # collection = db['ProcessBackup']
-#     # collection.insert_many(history.to_dict('records'))
+    # save into database
+    client = pymongo.MongoClient('localhost', 27017)
+    db = client['twitter_backup']
+    collection = db['ProcessBackup']
+    collection.insert_many(history.to_dict('records'))
     logger.info("Final sentiment saved. Time takes {}s.".format(str(file_extraction_end-file_extraction_start)))
     gc.collect()
 except Exception as e:

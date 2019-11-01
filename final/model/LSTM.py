@@ -39,7 +39,6 @@ class LSTMmodel(threading.Thread):
         self.info = {}
 
 
-
     def run(self):
         self.logging.info('LSTM')
         total = {}
@@ -49,18 +48,14 @@ class LSTMmodel(threading.Thread):
         data['Date'] = data.index
         t=[]
 
-        # sorting
         data = data.sort_index(ascending=True, axis=0)
         new_data = pd.DataFrame(index=range(0, len(data)), columns=['Date', 'Close'])
         for n in range(0, len(data)):
             new_data['Date'][n] = data['Date'][n]
             new_data['Close'][n] = data['Close'][n]
 
-        # setting index
         new_data.index = new_data.Date
         new_data.drop('Date', axis=1, inplace=True)
-
-        # creating train and test sets
         dataset = new_data.values
         self.length = int(len(dataset) * (1 - self.valid))
         train = dataset
@@ -111,7 +106,7 @@ class LSTMmodel(threading.Thread):
         t.append(MAPE1)
         total['30'] = t
 
-        #plotly object
+        # produce graph
         fig6 = go.Figure()
         fig6.update_layout(width=1000,height=700,title='LSTM \n Using Lag' + str(30) + ' RMSE ' + "{0:.2f}".format(rms1),
                            yaxis=go.layout.YAxis(
@@ -140,18 +135,15 @@ class LSTMmodel(threading.Thread):
         data.index = data['timestamp']
         data['Date'] = data.index
 
-        # sorting
         data = data.sort_index(ascending=True, axis=0)
         new_data = pd.DataFrame(index=range(0, len(data)), columns=['Date', 'Close'])
         for n in range(0, len(data)):
             new_data['Date'][n] = data['Date'][n]
             new_data['Close'][n] = data['Close'][n]
 
-        # setting index
         new_data.index = new_data.Date
         new_data.drop('Date', axis=1, inplace=True)
 
-        # creating train and test sets
         dataset = new_data.values
         self.length = int(len(dataset) * (1 - self.valid))
         train1 = dataset
@@ -203,7 +195,7 @@ class LSTMmodel(threading.Thread):
         t1.append(MAPE2)
         total['60'] = t1
 
-        # plotly object
+        # produce graph
         fig7 = go.Figure()
         fig7.update_layout(width=1000,height=700,title='LSTM \n Using Lag' + str(60) + ' RMSE ' + "{0:.2f}".format(rms2),
                            yaxis=go.layout.YAxis(
@@ -232,18 +224,15 @@ class LSTMmodel(threading.Thread):
         data.index = data['timestamp']
         data['Date'] = data.index
 
-        # sorting
         data = data.sort_index(ascending=True, axis=0)
         new_data = pd.DataFrame(index=range(0, len(data)), columns=['Date', 'Close'])
         for n in range(0, len(data)):
             new_data['Date'][n] = data['Date'][n]
             new_data['Close'][n] = data['Close'][n]
 
-        # setting index
         new_data.index = new_data.Date
         new_data.drop('Date', axis=1, inplace=True)
 
-        # creating train and test sets
         dataset = new_data.values
         self.length = int(len(dataset) * (1 - self.valid))
         train2 = dataset
@@ -296,7 +285,7 @@ class LSTMmodel(threading.Thread):
         t2.append(rms3)
         t2.append(MAPE2)
         total['90'] = t2
-        # plotly object
+        # produce object
         fig8 = go.Figure()
         fig8.update_layout(width=1000,height=700,title='LSTM \n Using Lag' + str(90) + ' RMSE ' + "{0:.2f}".format(rms3),
                            yaxis=go.layout.YAxis(

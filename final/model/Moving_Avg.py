@@ -44,7 +44,7 @@ class MovingAverage(threading.Thread):
             b = a / len(test)
             preds.append(b)
 
-        # RMSE
+        # Evaluation
         rms = np.sqrt(np.mean(np.power((np.array(test['Close']) - preds), 2)))
         self.logging.info('RMSE value on validation set: {}.'.format(rms))
         print('\n RMSE value on validation set:')
@@ -59,7 +59,7 @@ class MovingAverage(threading.Thread):
         total.append(MAPE)
         self.info['MA'] = total
         
-        # plotly object
+        # produce graph
         fig = go.Figure()
         fig.update_layout(width=1000,height=700, title='Moving Average \n RMSE'+"{0:.2f}".format(rms), yaxis=go.layout.YAxis(
             title=go.layout.yaxis.Title(

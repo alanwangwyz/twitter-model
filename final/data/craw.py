@@ -1,3 +1,17 @@
+#University of Melbourne
+#School of computing and information systems
+#Master of Information Technology
+#Semester 2, 2019
+#2019-SM2-COMP90055: Computing Project
+#Software Development Project
+#Cryptocurrency Analytics Based on Machine Learning
+#Supervisor: Prof. Richard Sinnott
+#Team member :Tzu-Tung HSIEH (818625)
+#             Yizhou WANG (669026)
+#             Yunqiang PU (909662)
+
+# our attempt to crawl the data.
+
 import gc
 import logging
 import quandl
@@ -24,7 +38,9 @@ try:
     start_date = datetime.combine(date.today() - timedelta(days=1), dtime(14, 0))
     end_date = datetime.combine(date.today(), dtime(14, 0))
     logger.info("Start date: {}; end date: {}.".format((start_date + timedelta(days=1)).strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')))
+    #save price pickle
     save_pickle(df, os.path.join('stock_price.p'))
+    # Save into mongo as well
     client = pymongo.MongoClient('localhost', 27017)
     db = client['twitter_backup']
     collection = db['PriceBackup']

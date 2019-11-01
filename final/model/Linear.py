@@ -1,3 +1,20 @@
+#University of Melbourne
+#School of computing and information systems
+#Master of Information Technology
+#Semester 2, 2019
+#2019-SM2-COMP90055: Computing Project
+#Software Development Project
+#Cryptocurrency Analytics Based on Machine Learning
+#Supervisor: Prof. Richard Sinnott
+#Team member :Tzu-Tung HSIEH (818625)
+#             Yizhou WANG (669026)
+#             Yunqiang PU (909662)
+
+# This part we just call the function 'from sklearn
+# .linear_model import LinearRegression' Linear 
+# Regression model apply to the gov sentiment analysis
+#  and to produce the 'LinearTwitter.json' as the result.
+
 import gc
 import plotly
 from fastai.structured import *
@@ -26,26 +43,19 @@ class LinearModel(threading.Thread):
         data['timestamp'] = pd.to_datetime(data.index, format='%Y-%m-%d')
         data.index = data['timestamp']
         data['Date'] = data.index
-
-        # sorting
         data = data.sort_index(ascending=True, axis=0)
-
-        # creating a separate dataset
         new_data = pd.DataFrame(index=range(0, len(data)), columns=['Date', 'Close'])
-
         for i in range(0, len(data)):
             new_data['Date'][i] = data['Date'][i]
             new_data['Close'][i] = data['Close'][i]
+        # transform data according to Fastai
         add_datepart(new_data, 'Date')
         new_data.drop('Elapsed', axis=1, inplace=True)
         new_data['mon_fri'] = 0
-        print(new_data)
-
         def check(date):
             if date == 0 or date == 4:
                 return 1
             return 0
-
         new_data['mon_fri'] = new_data['Dayofweek'].apply(lambda row: check(row))
         new_data.index = data['timestamp']
         data1 = new_data.copy()
@@ -62,11 +72,11 @@ class LinearModel(threading.Thread):
         x_valid = valid.drop('Close', axis=1)
         y_valid = valid['Close']
         self.logging.info('Linear Regression Model')
+        # build model
         model1 = LinearRegression()
         model1.fit(x_train, y_train)
         preds = model1.predict(x_valid)
-
-
+        # evaluation
         rms_linear = np.sqrt(np.mean(np.power((np.array(y_valid) - np.array(preds)), 2)))
         self.logging.info('RMSE value on validation set with +/- + Government: {}.'.format(rms_linear))
         print('RMSE value on validation set with +/-:')
@@ -79,12 +89,8 @@ class LinearModel(threading.Thread):
         t.append(rms_linear)
         t.append(MAPE)
         total['GT'] = t
-
         self.rmse[rms_linear] = x_train, y_train, model1, new_data
         valid['Predict_Twitter'] = preds
-
-        # picture.show()
-
 
         train1 = data1
         valid1 = data1[self.length:]
@@ -93,8 +99,10 @@ class LinearModel(threading.Thread):
         x_valid1 = valid1.drop('Close', axis=1)
         y_valid1 = valid1['Close']
         model2 = LinearRegression()
+        # build model
         model2.fit(x_train1,y_train1)
         preds1 = model2.predict(x_valid1)
+        # evaluation
         rms_linear1 = np.sqrt(np.mean(np.power((np.array(y_valid1) - np.array(preds1)), 2)))
         self.logging.info('RMSE value on validation set: {}.'.format(rms_linear1))
         print('\n RMSE value on validation set:')
@@ -118,9 +126,10 @@ class LinearModel(threading.Thread):
         x_valid2 = valid2.drop('Close', axis=1)
         y_valid2 = valid2['Close']
         model3 = LinearRegression()
-
+        # build model
         model3.fit(x_train2, y_train2)
         preds2 = model3.predict(x_valid2)
+        # evaluation
         rms_linear2 = np.sqrt(np.mean(np.power((np.array(y_valid2) - np.array(preds2)), 2)))
         self.logging.info('RMSE value on validation set with +/-: {}.'.format(rms_linear2))
         print('\n RMSE value on validation set:')
@@ -146,15 +155,13 @@ class LinearModel(threading.Thread):
         train1.index = data.index
         train2.index = data.index
 
-        # self.rmse[rms_linear1] = x_train1, y_train1, model, data1
+        # make prediction with minimum RMSE
         index = min(self.rmse.keys())
-        # print(self.rmse.get(index))
         newx_train, newy_train, new_model, newd = self.rmse.get(index)
-
         stdev = np.sqrt(sum((new_model.predict(newx_train) - newy_train) ** 2) / (len(newy_train) - 2))
-        # print(stdev)
         predict = useful_function.FunctionalTools.predict(365, new_model, stdev, newd, 'L')
         fig = useful_function.FunctionalTools.plot_intervals(predict)
+        # produce graph
         fig1 = useful_function.FunctionalTools.evaluate('Linear Regression with Twitter and Government\n RMSE: \t', rms_linear, train_, valid, valid, index, fig)
         with open('../JSON/LinearTwitterGovernment.json', 'w') as outfile:
             json.dump(fig1, outfile, cls=plotly.utils.PlotlyJSONEncoder)
@@ -169,7 +176,6 @@ class LinearModel(threading.Thread):
         self.info['Linear'] = total
 
         self.logging.info('Linear Models have been saved!')
-        # return self.info
         gc.collect()
 
     def join(self, *args):

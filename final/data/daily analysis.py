@@ -1,3 +1,19 @@
+#University of Melbourne
+#School of computing and information systems
+#Master of Information Technology
+#Semester 2, 2019
+#2019-SM2-COMP90055: Computing Project
+#Software Development Project
+#Cryptocurrency Analytics Based on Machine Learning
+#Supervisor: Prof. Richard Sinnott
+#Team member :Tzu-Tung HSIEH (818625)
+#             Yizhou WANG (669026)
+#             Yunqiang PU (909662)
+
+# to analysis the SentimentChange Based on the 
+# privious records amd to generate a 
+# SentimentChange.json to the front end to display
+
 import pymongo
 import pandas as pd
 from datetime import datetime, timedelta, date, time as dtime
@@ -6,10 +22,6 @@ import logging
 import os, pickle
 import time
 import numpy as np
-def save_pickle(data, filepath):
-    save_documents = open(filepath, 'wb')
-    pickle.dump(data, save_documents)
-    save_documents.close()
 
 def load_pickle(filepath):
     documents_f = open(filepath, 'rb')
@@ -116,10 +128,8 @@ def difference(history):
     history['GovIsneg'] = history['Govneg_change'].apply(lambda x: tag(x))
     history['Ispos'] = history['pos_change'].apply(lambda x: tag(x))
     history['Isneg'] = history['neg_change'].apply(lambda x: tag(x))
-    # history['timestamp'] = history.index
-    # history.index = history['timestamp']
-    # history = history.set_index('timestamp').resample('D').ffill()
     return history
+
 def tag(context):
     if context is None:
         return 0
@@ -162,75 +172,47 @@ try:
                                                        end_date.strftime('%Y-%m-%d')))
     client = pymongo.MongoClient('localhost', 27017)
     db = client['twitter_db']
-
+    # extract the data from database
     file_extraction_start = time.time()
-    history=load_pickle(os.path.join('history.p'))
-    # collection = db['twitter_collection_2016-2018']
-    # history = pd.DataFrame(list(collection.find()))
-    # history = percentage(history, 1)
-    # collection = db['twitter_collection_5_8_17']
-    # archive = pd.DataFrame(list(collection.find()))
-    # archive = percentage(archive, 0)
-    # collection = db['twitter_collection_13_10']
-    # archiveold = pd.DataFrame(list(collection.find()))
-    # archiveold = percentage(archiveold, 0)
-    collection = db['twitter_collection_new']
+    collection = db['twitter_collection_2016-2018']
+    history = pd.DataFrame(list(collection.find()))
+    history = percentage(history, 1)
+    collection = db['twitter_collection_5_8_17']
+    archive = pd.DataFrame(list(collection.find()))
+    archive = percentage(archive, 0)
+    collection = db['twitter_collection_13_10']
+    archiveold = pd.DataFrame(list(collection.find()))
+    archiveold = percentage(archiveold, 0)
+    collection = db['twitter_collection']
     recent = pd.DataFrame(list(collection.find()))
-    
     recent = percentage(recent, 2)
-    print(recent)
+
+    #combine them together
+    history = pd.concat([archiveold, history], sort=True)
+    history = pd.concat([history, archive], sort=True)
     history = pd.concat([history, recent], sort=True)
     
-    
     history.index = history['timestamp']
-    # save_pickle(history, os.path.join('historynow.p'))
-    
     history.sort_index(inplace=True)
-    print(history)
-    # datetime_object = datetime.strptime('Sep 13 2011', '%b %d %Y')
-    # history.loc[0] = [0, 0, 5, 1, 5, 0, 455, 0.080000, 3450, 0.630000, 1640, 0.298182, datetime_object, 5500]
-
-
-    # print('second')
-    # print(history)
-    # history.sort_index(inplace=True)
-    # history.index = history['timestamp']
-    # history.sort_index(inplace=True)
-    
-    # today = pd.DataFrame()
     history=difference(history)
-    # if history['timestamp'].iloc[len(history)-1].date()==datetime.now().date():
-    #     history.drop(history.tail(1).index, inplace = True)
-    # print(history)
-	
     datetime1 = datetime.strftime(datetime.now() - timedelta(1), '%Y-%m-%d')
     new = history.iloc[len(history) - 1]
     new = new.to_dict()
-
     history = history.append(pd.DataFrame(new, index=[datetime1]))
     history['timestamp'] = history.index
     history.index = history['timestamp']
     history = history.drop_duplicates(subset='timestamp', keep="first")
-    # print(history)
-    
-    
     history = history.resample('D').ffill()
-
     history['timestamp'] = history.index
-    # print(history)
-
+    # concat with price
     old = load_pickle(os.path.join("../data/stock_price.p"))
     history['date'] = history.index
     old['date'] = old.index
     history = pd.merge(old, history, how='right')
-    
     history.index = history['timestamp']
-    # # save_pickle(history, os.path.join('final.p'))
+    # get one month data and save into json
     history = history.iloc[-30:]
-    print(history)
     history.to_json(r'../JSON/SentimentChange.json', orient='records', date_format='iso', date_unit='s')
-    # today.to_json(r'../JSON/SentimentChangeToday.json', orient='records', date_format='iso', date_unit='s')
-    
     gc.collect()
 except Exception as e:
     print(e)
